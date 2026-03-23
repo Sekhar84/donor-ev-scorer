@@ -1,0 +1,19 @@
+# data — never commit real or simulated donor data
+data/
+simulated_data/
+
+# models — artifacts go in MLflow/S3, not Git
+models/
+*.pkl
+*.joblib
+
+# Python
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+.DS_Store
+mlruns/
+
+# notebooks output
+notebooks/.ipynb_checkpoints/

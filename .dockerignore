@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+data/
+models/
+mlruns/
+.git/
+*.pkl
+*.joblib
+notebooks/
+simulated_data/

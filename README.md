@@ -1,6 +1,6 @@
-# Donor EV Scorer
+# Donor EV Scorer — BelFund
 
-A production-ready machine learning pipeline for **donor expected value (EV) scoring** in direct mail fundraising campaigns. Built for First In Donor (FID) campaigns — active donors who have given at least once in the past 24 months.
+A production-ready machine learning pipeline for **donor expected value (EV) scoring** in direct mail fundraising campaigns. Built for **BelFund**, a Belgian nonprofit fundraising organisation, targeting **Fidelization (FID)** campaigns — loyalty campaigns aimed at active donors who have given at least once in the past 24 months and are being cultivated for continued giving.
 
 ---
 
@@ -62,8 +62,11 @@ cp .env.example .env
 
 ```bash
 # ── Client and campaign identity ──────────────────────────────────────────
-CLIENT_ID=                        # integer client identifier
-CAMPAIGN_TYPE=FID                 # FID | REAC
+# BelFund is used as the demo client name throughout this project.
+# In production replace CLIENT_ID with your actual client identifier.
+CLIENT_ID=47                      # integer client identifier (BelFund demo = 47)
+CLIENT_NAME=BelFund               # human-readable label for logs and reports
+CAMPAIGN_TYPE=FID                 # FID (Fidelization/loyalty) | REAC (Reactivation)
 CAMPAIGN_CHANNEL=Direct Mail
 
 # ── Data paths ────────────────────────────────────────────────────────────
@@ -167,16 +170,16 @@ Raw donor data (SAS files)
 
 The pipeline supports two campaign types controlled by `CAMPAIGN_TYPE` in `.env`:
 
-### FID / Active campaigns
+### FID / Fidelization campaigns (active donors)
 
 ```python
 # Select donor if EV exceeds cost per mail
 selected = ev_eur > cost_per_mail
 ```
 
-Net EV positive means the expected return outweighs the mailing cost. The threshold can be adjusted via `COST_PER_MAIL` without retraining.
+Net EV positive means the expected return outweighs the mailing cost. These are loyalty campaigns targeting donors already engaged with BelFund — the goal is to sustain and grow their giving. The threshold can be adjusted via `COST_PER_MAIL` without retraining.
 
-### REAC / Inactive campaigns
+### REAC / Reactivation campaigns (inactive donors)
 
 ```python
 # Select donors in top N EV deciles
@@ -184,7 +187,7 @@ ev_decile = pd.qcut(ev_eur, q=10, labels=False)
 selected  = ev_decile >= (10 - EV_DECILE_CUTOFF)
 ```
 
-For lapsed donors the absolute EV is less reliable. Ranking by decile and selecting the top N is more robust — the cutoff is set via `EV_DECILE_CUTOFF` in `.env`.
+For lapsed donors the absolute EV is less reliable — their giving behaviour is harder to predict. Ranking by decile and selecting the top N is more robust than a fixed cost threshold. The cutoff is set via `EV_DECILE_CUTOFF` in `.env`.
 
 ---
 
