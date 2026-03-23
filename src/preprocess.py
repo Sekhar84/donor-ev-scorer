@@ -638,12 +638,15 @@ def build_features(
 
         # Filter to FID-eligible donors only
         if filter_fid and "all_days_since_last" in feat.columns:
-            before = len(feat)
+            n_selected = len(feat)
             feat = feat[feat["all_days_since_last"] < ACTIVE_THRESHOLD_DAYS].copy()
-            dropped = before - len(feat)
-            if dropped:
-                print(f"  [AG {ag}] T={T.date()} | {len(feat):,} donors "
-                      f"({dropped:,} lapsed dropped)")
+            n_eligible = len(feat)
+            n_lapsed   = n_selected - n_eligible
+            pct_elig   = n_eligible / n_selected if n_selected else 0
+            print(f"  [AG {ag}] T={T.date()} | "
+                  f"selected={n_selected:,} | "
+                  f"FID eligible={n_eligible:,} ({pct_elig:.0%}) | "
+                  f"lapsed dropped={n_lapsed:,}")
         else:
             print(f"  [AG {ag}] T={T.date()} | {len(feat):,} donors")
 
@@ -654,7 +657,16 @@ def build_features(
         raise ValueError("No feature rows produced. Check scope_df and selections_df.")
 
     combined = pd.concat(all_frames, ignore_index=True, sort=False)
-    print(f"\nFeature matrix: {combined.shape[0]:,} rows × {combined.shape[1]:,} columns")
+
+    print(f"\n{'─'*65}")
+    print(f"Feature engineering complete")
+    print(f"  Campaigns processed : {len(action_groups)}")
+    print(f"  Total rows          : {combined.shape[0]:,}  (donor × campaign pairs)")
+    print(f"  Feature columns     : {combined.shape[1]}")
+    print(f"  Unique donors       : {combined[CID].nunique():,}")
+    print(f"  Date range          : {pd.to_datetime(combined['SelectionDate']).min().date()} "
+          f"→ {pd.to_datetime(combined['SelectionDate']).max().date()}")
+    print(f"{'─'*65}")
     return combined
 
 
@@ -695,8 +707,9 @@ def main():
     sels_df  = sels_df.merge(acts_df[["Action_id", "Cost_unit"]], on="Action_id", how="left")
     sels_df["Cost_unit"] = sels_df["Cost_unit"].fillna(sels_df["Cost_unit"].mean())
 
-    # Rename to match pipeline column names
+    # Normalise column names — selections uses Action_Group, scope uses Action_group
     sels_df.rename(columns={"Action_Group": "Action_Group"}, inplace=True)
+    scope_df.rename(columns={"Action_group": "Action_Group"}, inplace=True)
 
     # ── Build features ─────────────────────────────────────────────────────
     features_df = build_features(
@@ -706,16 +719,61 @@ def main():
         filter_fid    = True,
     )
 
+    # ── Build target variables (Gave_Donation, Amount) ────────────────────
+    # Join campaign response gifts onto selections to build targets
+    # Left join: all selected donors, non-responders get Amount=0
+    print("\nBuilding target variables...")
+
+    # Campaign response gifts only (Action_id is not null)
+    resp_gifts = gifts_df[gifts_df["Action_id"].notna()].copy()
+    resp_gifts["Action_id"] = pd.to_numeric(resp_gifts["Action_id"], errors="coerce")
+
+    # Aggregate per donor × action_id (sum in case of multiple gifts)
+    gifts_agg = (
+        resp_gifts
+        .groupby(["Ind_id", "Action_id"])["Amount"]
+        .sum()
+        .reset_index()
+    )
+
+    # Map action_id → Action_Group
+    acts_df2 = pd.read_csv(DATA_DIR / "actions_sim.csv")
+    gifts_agg = gifts_agg.merge(
+        acts_df2[["Action_id", "Action_Group"]], on="Action_id", how="left"
+    )
+
+    # Left join targets onto feature matrix
+    features_df = features_df.merge(
+        gifts_agg[["Ind_id", "Action_Group", "Amount"]],
+        on=["Ind_id", "Action_Group"],
+        how="left"
+    )
+    features_df["Amount"]        = features_df["Amount"].fillna(0.0)
+    features_df["Gave_Donation"] = (features_df["Amount"] > 0).astype(int)
+
+    rr = features_df["Gave_Donation"].mean()
+    print(f"  Target rows:    {len(features_df):,}")
+    print(f"  Responders:     {features_df['Gave_Donation'].sum():,} ({rr:.2%})")
+    print(f"  Non-responders: {(features_df['Gave_Donation']==0).sum():,}")
+    print(f"  Amount stats (responders):")
+    resp = features_df[features_df["Amount"] > 0]["Amount"]
+    print(f"    median=€{resp.median():.2f}  mean=€{resp.mean():.2f}  "
+          f"p90=€{resp.quantile(0.90):.2f}")
+
     # ── Save ───────────────────────────────────────────────────────────────
     out_path = OUTPUT_DIR / "features.parquet"
     features_df.to_parquet(out_path, index=False)
     print(f"\nSaved: {out_path}")
     print(f"Shape: {features_df.shape}")
+    print(f"\nKey columns present:")
+    for c in ["Ind_id", "Action_Group", "SelectionDate", "Gave_Donation", "Amount"]:
+        print(f"  {c}: {c in features_df.columns}")
     print(f"\nSample feature stats:")
     key_cols = [
         "all_gifts_n", "all_gifts_mean", "all_days_since_last",
         "all_recency_score", "all_resp_rate", "recency_adj_cltv",
         "engagement_depth", "lapse_risk_score",
+        "Gave_Donation", "Amount",
     ]
     available = [c for c in key_cols if c in features_df.columns]
     print(features_df[available].describe(percentiles=[.25, .50, .75]).round(3).to_string())
