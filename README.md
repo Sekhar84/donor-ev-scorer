@@ -1,4 +1,4 @@
-# Donor EV Scorer — BelFund
+# Donor EV Scorer — BelFund(a simulated Charity)
 
 A production-ready machine learning pipeline for **donor expected value (EV) scoring** in direct mail fundraising campaigns. Built for **BelFund**, a Belgian nonprofit fundraising organisation, targeting **Fidelization (FID)** campaigns — loyalty campaigns aimed at active donors who have given at least once in the past 24 months and are being cultivated for continued giving.
 
@@ -240,7 +240,7 @@ Every statistical parameter in the simulator was derived from profiling the real
 **Notes on gaps:**
 
 - **Amount mean/p90** — the real data has extreme skew (skew=36, max=€5,000 in training data, max=€900,000 in full history). Replicating this tail would require simulating rare institutional donors which distort the EV model. The median — which the EV model cares most about — matches exactly.
-- **Selections per donor** — real data spans 2011–2026 (15 years, 1,556 action IDs). The simulation spans 2025–2026 (19 campaigns, 57 action IDs). The per-segment selection logic matches; the lifetime count does not.
+- **Selections per donor** — real data spans 2011–2026 (15 years, 1,556 action IDs across full history). The 598,258 figure is unique donor-campaign selection rows, not unique donors — there are 138,337 unique donors with gift history. The simulation spans only the training period (19 campaigns, 57 action IDs), so lifetime selection counts are proportionally lower. Per-segment selection logic matches; lifetime totals do not.
 - **Gifts per donor** — same reason. Real median=2 reflects the full 15-year population including recent joiners. Simulation generates proportionally correct history within its shorter window.
 
 ### Response rate by segment (simulated vs real)

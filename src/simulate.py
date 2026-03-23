@@ -16,10 +16,12 @@ No real client identifiers appear in this script.
 Calibration source: profiling of a real FID campaign dataset.
 
 Key distributions matched:
-  - 6.53% overall response rate
+  - 138,337 unique donors with gift history in real data
+  - 598,258 unique donor-campaign selection rows (donors × campaigns)
+  - 6.53% overall response rate in training period
   - Amount: median €35, mean €39, log-normal (mu=3.24, sigma=0.93)
   - Amount cap at p90=€65, p95=€100
-  - 19 FID campaigns, campaign-level RR range 2-10%
+  - 19 in-scope FID campaigns, campaign-level RR range 2-10%
   - Gifts per donor: median=2, mean=7.86, highly right-skewed
   - Days since last gift: median=1,420 — 33% FID eligible (<730d)
   - SDD: 1.39% of selection pool, Monthly type dominant (83%)
@@ -54,8 +56,16 @@ OUT_DIR = Path(os.getenv("OUTPUT_DIR", "data/simulated"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── Scale down for simulation (proportional to real data) ─────────────────
-# Real: 598k donors, 19 campaigns, 554k selection rows
-# Simulated: 15k donors, 19 campaigns — enough to be realistic, fast to run
+# Real data scale:
+#   138,337 unique donors with gift history
+#   598,258 unique donor-campaign selection rows (donors × campaigns)
+#   1,556   unique action_ids across full history
+#   19      in-scope FID campaigns for training period
+#   554,198 rows in selections_gifts (training targets)
+#
+# Simulated: 15k donors, 19 campaigns — realistic distributions, fast to run
+# Selections per donor will be higher than real (57 segments vs 1,556 historical)
+# because the simulation only covers the training period, not 15 years of history
 N_SEGS_PER_CAMP = 3       # ~3 segments per campaign = 57 action_ids
 HIST_START      = pd.Timestamp("2011-02-01")
 CAMP_START      = pd.Timestamp("2025-01-01")
