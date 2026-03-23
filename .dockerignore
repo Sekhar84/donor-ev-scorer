@@ -1,11 +1,19 @@
+# data — never commit real or simulated donor data
+data/
+simulated_data/
+
+# Python
 __pycache__/
 *.pyc
 .env
-data/
+
+# notebooks output
+notebooks/
+
+# MLflow artifacts
 models/
 mlruns/
 .git/
 *.pkl
 *.joblib
-notebooks/
-simulated_data/
+

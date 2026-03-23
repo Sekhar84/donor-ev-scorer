@@ -1,0 +1,27 @@
+services:
+  ev-scorer:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - CAMPAIGN_TYPE=${CAMPAIGN_TYPE:-FID}
+      - COST_PER_MAIL=${COST_PER_MAIL:-1.50}
+      - EV_DECILE_CUTOFF=${EV_DECILE_CUTOFF:-3}
+      - MODEL_VERSION=${MODEL_VERSION:-v1}
+      - CLIENT_NAME=${CLIENT_NAME:-BelFund}
+      - SIM_MODE=${SIM_MODE:-true}
+      - SIM_N_DONORS=${SIM_N_DONORS:-15000}
+      - SIM_N_CAMPAIGNS=${SIM_N_CAMPAIGNS:-19}
+      - SIM_SEED=${SIM_SEED:-42}
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
