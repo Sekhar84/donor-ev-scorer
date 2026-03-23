@@ -451,6 +451,13 @@ def main():
     joblib.dump(feature_cols, MODELS_DIR / "feature_cols.joblib")
     joblib.dump(best_cal_name, MODELS_DIR / "calibrator_type.joblib")
 
+    # Save the exact feature names the models were trained on
+    # (may differ from feature_cols if SimpleImputer dropped all-NaN columns)
+    model_feature_names_p = clf.get_booster().feature_names
+    model_feature_names_a = reg.get_booster().feature_names
+    joblib.dump(model_feature_names_p, MODELS_DIR / "model_feature_names_p.joblib")
+    joblib.dump(model_feature_names_a, MODELS_DIR / "model_feature_names_a.joblib")
+
     metrics = {
         "propensity_raw":        clf_m,
         "propensity_calibrated": clf_m_cal,
