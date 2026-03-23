@@ -219,12 +219,15 @@ def score_donors(
 
     # EV decile — 10 = highest EV donors (best to mail), 1 = lowest
     try:
-        ev_rank = pd.qcut(ev, q=10, labels=False, duplicates="drop")
-        # ev_rank: 0=lowest EV, 9=highest EV
-        # Convert to 1-10 scale where 10=highest EV
-        ev_decile = ev_rank + 1  # 1=lowest, 10=highest
+        if len(ev) >= 10:
+            ev_rank   = pd.qcut(ev, q=10, labels=False, duplicates="drop")
+            ev_decile = ev_rank + 1   # 1=lowest, 10=highest
+        else:
+            # Not enough donors for deciles — assign based on EV vs median
+            ev_median = np.median(ev)
+            ev_decile = pd.Series(np.where(ev >= ev_median, 8, 3))
     except Exception:
-        ev_decile = np.ones(len(ev))
+        ev_decile = pd.Series(np.full(len(ev), 5))
 
     # ── Selection logic ───────────────────────────────────────────────────
     if camp_type == "REAC":
