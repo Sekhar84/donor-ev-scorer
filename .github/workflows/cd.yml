@@ -45,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:latest
+            ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:v1
             ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:${{ github.sha }}
 
       # ── Step 4: Deploy to EC2 via SSH ─────────────────────────────────
