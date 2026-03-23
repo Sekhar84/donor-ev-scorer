@@ -1,4 +1,4 @@
-# Donor EV Scorer — BelFund
+# Donor EV Scorer — BelFund(a simulated charity)
 
 A production-ready machine learning pipeline for **donor expected value (EV) scoring** in direct mail fundraising campaigns. Built for **BelFund**, a Belgian nonprofit fundraising organisation, targeting **Fidelization (FID)** campaigns — loyalty campaigns aimed at active donors who have given at least once in the past 24 months and are being cultivated for continued giving.
 
