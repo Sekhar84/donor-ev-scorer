@@ -17,3 +17,4 @@ mlruns/
 
 # notebooks output
 notebooks/.ipynb_checkpoints/
+__pycache__/
