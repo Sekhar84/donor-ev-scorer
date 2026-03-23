@@ -1,0 +1,121 @@
+# ─────────────────────────────────────────────────────────────────────────
+# CI — Continuous Integration
+# Runs on every push to any branch
+#
+# Steps:
+#   1. Checkout code
+#   2. Set up Python
+#   3. Install dependencies
+#   4. Run tests
+#   5. Verify Docker build
+# ─────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: ["*"]        # trigger on push to any branch
+  pull_request:
+    branches: ["main"]     # trigger on PR to main
+
+jobs:
+  test:
+    name: Test pipeline
+    runs-on: ubuntu-latest  # GitHub's free Linux VM
+
+    steps:
+      # ── Step 1: Clone the repo onto the runner ─────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Step 2: Install Python matching our version ────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"           # cache pip downloads for faster runs
+
+      # ── Step 3: Install dependencies ──────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── Step 4: Run simulation to generate test data ───────────────────
+      # Use small dataset for speed in CI (500 donors, 5 campaigns)
+      - name: Generate simulated data
+        env:
+          SIM_N_DONORS: 500
+          SIM_N_CAMPAIGNS: 5
+          SIM_SEED: 42
+          SIM_MODE: "true"
+          CLIENT_NAME: BelFund
+          CLIENT_ID: "47"
+          CAMPAIGN_TYPE: FID
+        run: python src/simulate.py
+
+      # ── Step 5: Run feature engineering ───────────────────────────────
+      - name: Run preprocessing
+        env:
+          SIM_MODE: "true"
+          ACTIVE_THRESHOLD_DAYS: "730"
+          CAMPAIGN_TYPE: FID
+        run: python src/preprocess.py
+
+      # ── Step 6: Run model training ─────────────────────────────────────
+      - name: Train models
+        env:
+          RANDOM_SEED: "42"
+          RESPONSE_CAP_PCT: "0.90"
+          FRAC_TRAIN: "0.70"
+          FRAC_VAL: "0.15"
+          FRAC_TEST: "0.15"
+          MLFLOW_TRACKING_URI: "sqlite:///mlflow.db"
+          MLFLOW_EXPERIMENT_NAME: "ci-test"
+          CAMPAIGN_TYPE: FID
+          MODEL_VERSION: v1
+        run: python src/train.py --run-name "ci-run"
+
+      # ── Step 7: Quality gate — fail if AUC below threshold ────────────
+      # This prevents deploying a degraded model
+      - name: Quality gate — check model AUC
+        run: |
+          python -c "
+          import json
+          with open('models/training_metrics.json') as f:
+              m = json.load(f)
+          auc = m['propensity_calibrated']['val']['auc']
+          mae = m['amount']['val']['mae']
+          print(f'Propensity val AUC: {auc:.4f}')
+          print(f'Amount val MAE:     {mae:.2f}')
+          assert auc > 0.50, f'QUALITY GATE FAILED: AUC {auc:.4f} below threshold 0.50'
+          assert mae < 100,  f'QUALITY GATE FAILED: MAE {mae:.2f} above threshold 100'
+          print('Quality gate PASSED')
+          "
+
+      # ── Step 8: Run scoring to verify end-to-end ──────────────────────
+      - name: Run scoring
+        env:
+          CAMPAIGN_TYPE: FID
+          COST_PER_MAIL: "1.50"
+          EV_DECILE_CUTOFF: "3"
+        run: python src/score.py --split test
+
+      # ── Step 9: Verify Docker build (don't push, just check it builds) ─
+      - name: Verify Docker build
+        run: docker build -t donor-ev-scorer-ci-test .
+
+  # ── Summary job — shows pass/fail clearly in GitHub UI ─────────────────
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: test              # only runs after test job completes
+    if: always()             # runs even if test job failed
+
+    steps:
+      - name: Report result
+        run: |
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ CI passed — safe to merge"
+          else
+            echo "❌ CI failed — do not merge"
+            exit 1
+          fi
