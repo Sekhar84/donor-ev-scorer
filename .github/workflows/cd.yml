@@ -101,26 +101,19 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting 8 minutes for container to start (runs full train pipeline on boot)..."
-          echo "Target: http://$EC2_HOST:8080/health"
-          sleep 480
-
-          # Try health check up to 8 times with 30s gaps
-          for i in 1 2 3 4 5 6 7 8; do
-            echo "Health check attempt $i..."
+          echo "Polling http://$EC2_HOST:8080/health every 30s for up to 15 minutes..."
+          for i in $(seq 1 30); do
+            echo "Attempt $i/30..."
             RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-              http://$EC2_HOST:8080/health --max-time 10 || echo "000")
-
+              http://$EC2_HOST:8080/health --max-time 15 || echo "000")
+            echo "  HTTP $RESPONSE"
             if [ "$RESPONSE" == "200" ]; then
-              echo "✅ Health check passed (HTTP $RESPONSE)"
+              echo "✅ Health check passed on attempt $i"
               exit 0
-            else
-              echo "⚠️  Health check failed (HTTP $RESPONSE) — waiting 30s..."
-              sleep 30
             fi
+            sleep 30
           done
-
-          echo "❌ Health check failed after 8 attempts — deployment failed"
+          echo "❌ Health check failed after 30 attempts (15 minutes)"
           exit 1
 
       # ── Step 6: Notify deployment result ──────────────────────────────
