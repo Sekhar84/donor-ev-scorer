@@ -101,8 +101,8 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting 5 minutes for container to start (runs full train pipeline on boot)..."
-          sleep 300
+          echo "Waiting 8 minutes for container to start (runs full train pipeline on boot)..."
+          sleep 480
 
           # Try health check up to 8 times with 30s gaps
           for i in 1 2 3 4 5 6 7 8; do
