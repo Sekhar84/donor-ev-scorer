@@ -102,6 +102,7 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
           echo "Waiting 8 minutes for container to start (runs full train pipeline on boot)..."
+          echo "Target: http://$EC2_HOST:8080/health"
           sleep 480
 
           # Try health check up to 8 times with 30s gaps
