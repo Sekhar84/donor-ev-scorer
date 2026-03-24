@@ -107,13 +107,14 @@ jobs:
           EC2_HOST:    ${{ secrets.EC2_HOST }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
-          echo "$EC2_SSH_KEY" > /tmp/ec2_key.pem
-          chmod 400 /tmp/ec2_key.pem
+          mkdir -p ~/.ssh
+          echo "$EC2_SSH_KEY" > ~/.ssh/ec2_key.pem
+          chmod 400 ~/.ssh/ec2_key.pem
 
           echo "Polling health endpoint on EC2 every 30s for up to 15 minutes..."
           for i in $(seq 1 30); do
             echo "Attempt $i/30..."
-            RESPONSE=$(ssh -i /tmp/ec2_key.pem \
+            RESPONSE=$(ssh -i ~/.ssh/ec2_key.pem \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               ec2-user@$EC2_HOST \
