@@ -564,16 +564,37 @@ POST /score
 
 ---
 
-## Live deployment
+## 🔌 API Interface
 
-```
-API:       http://108.128.131.169:8080
-Health:    http://108.128.131.169:8080/health
-Docs:      http://108.128.131.169:8080/docs
-EC2:       i-03072499666b0afb8  (t3.small, eu-west-1)
-Elastic IP: 108.128.131.169  (permanent — survives stop/start)
-S3 bucket: s3://somasekhar-donor-ev-scorer
-```
+The system is exposed via a FastAPI service.
 
-CI runs on every push — tests the full pipeline with 500 donors.
-CD runs on push to main — builds AMD64 image, deploys to EC2, health check via SSH.
+Endpoints
+Endpoint	Method	Description
+/health	GET	Service status
+/model-info	GET	Model metadata
+/score	POST	Score donors
+/select	POST	Return selected donors
+Example Response
+{
+  "ind_id": 100001,
+  "prob_donate": 0.142,
+  "pred_amount_eur": 38.50,
+  "ev_eur": 5.47,
+  "net_ev_eur": 3.97,
+  "roi": 3.65,
+  "selected": true
+}
+## 🐳 Deployment
+
+The system is fully containerised:
+
+Docker (reproducible runtime)
+Docker Compose (API + caching layer)
+Environment-based configuration
+CI/CD pipeline for automated testing and deployment
+Infrastructure (abstracted)
+Cloud: AWS
+Compute: containerised service
+Storage: object storage for models
+Experiment tracking: MLflow
+
