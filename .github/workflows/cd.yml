@@ -37,15 +37,19 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # ── Step 3: Build and push Docker image ───────────────────────────
-      # Tags with both :latest and the Git commit SHA for traceability
-      # e.g. sekharsoma84/donor-ev-scorer:a4521b6
+      # Build for linux/amd64 to match EC2 t3.small (Intel/AMD instance)
+      # GitHub Actions runners are also AMD64 — no cross-compilation needed
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:v1
+            ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:latest
             ${{ secrets.DOCKER_USERNAME }}/donor-ev-scorer:${{ github.sha }}
 
       # ── Step 4: Deploy to EC2 via SSH ─────────────────────────────────
@@ -91,17 +95,17 @@ jobs:
           EOF
 
       # ── Step 5: Health check — verify deployment succeeded ────────────
-      # Waits 60s for container to start (it trains models on boot)
+      # Waits 5 minutes for container to start (it trains models on boot)
       # Rolls back to previous image if health check fails
       - name: Health check
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting 90s for container to start (runs train pipeline on boot)..."
-          sleep 90
+          echo "Waiting 5 minutes for container to start (runs full train pipeline on boot)..."
+          sleep 300
 
-          # Try health check up to 5 times
-          for i in 1 2 3 4 5; do
+          # Try health check up to 8 times with 30s gaps
+          for i in 1 2 3 4 5 6 7 8; do
             echo "Health check attempt $i..."
             RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
               http://$EC2_HOST:8080/health --max-time 10 || echo "000")
@@ -115,7 +119,7 @@ jobs:
             fi
           done
 
-          echo "❌ Health check failed after 5 attempts — deployment failed"
+          echo "❌ Health check failed after 8 attempts — deployment failed"
           exit 1
 
       # ── Step 6: Notify deployment result ──────────────────────────────
