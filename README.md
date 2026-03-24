@@ -1,7 +1,11 @@
 # Donor EV Scorer — BelFund
+
 > Built for a Belgian nonprofit direct mail fundraising organisation.
 > BelFund is a fictitious name used in place of the real client.
 > Pipeline calibrated to real campaign data — no donor records included.
+
+![CI](https://github.com/Sekhar84/donor-ev-scorer/actions/workflows/ci.yml/badge.svg)
+![CD](https://github.com/Sekhar84/donor-ev-scorer/actions/workflows/cd.yml/badge.svg)
 
 A production-ready machine learning pipeline for **donor expected value (EV) scoring** in direct mail fundraising campaigns. Built for **BelFund**, a Belgian nonprofit fundraising organisation, targeting **Fidelization (FID)** campaigns — loyalty campaigns aimed at active donors who have given at least once in the past 24 months and are being cultivated for continued giving.
 
@@ -548,9 +552,28 @@ POST /score
 - [x] Data simulation calibrated to real distributions (`src/simulate.py`)
 - [x] Feature engineering pipeline — 225 features, 5 time windows (`src/preprocess.py`)
 - [x] Dual model training — propensity + amount, calibration comparison (`src/train.py`)
-- [ ] EV scoring and selection logic (`src/score.py`)
-- [ ] FastAPI endpoints — /score, /select, /health (`main.py`)
-- [ ] Dockerfile and Docker Compose
-- [ ] MLflow experiment tracking (Day 5)
-- [ ] AWS EC2 deployment (Day 4)
+- [x] EV scoring and selection logic with decile lift table (`src/score.py`)
+- [x] FastAPI endpoints — /score, /select, /health, /model-info (`main.py`)
+- [x] Dockerfile and Docker Compose
+- [x] MLflow experiment tracking — 3 runs, isotonic calibration selected
+- [x] AWS EC2 deployment — t3.small, eu-west-1, Elastic IP
+- [x] CI/CD — GitHub Actions, quality gate, SSH health check
 - [ ] REAC campaign variant
+- [ ] MLflow model registry — promote best model to production
+- [ ] AWS SageMaker migration (post-sprint)
+
+---
+
+## Live deployment
+
+```
+API:       http://108.128.131.169:8080
+Health:    http://108.128.131.169:8080/health
+Docs:      http://108.128.131.169:8080/docs
+EC2:       i-03072499666b0afb8  (t3.small, eu-west-1)
+Elastic IP: 108.128.131.169  (permanent — survives stop/start)
+S3 bucket: s3://somasekhar-donor-ev-scorer
+```
+
+CI runs on every push — tests the full pipeline with 500 donors.
+CD runs on push to main — builds AMD64 image, deploys to EC2, health check via SSH.
