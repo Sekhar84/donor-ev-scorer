@@ -72,6 +72,11 @@ jobs:
 
             echo "=== Deploying $IMAGE ==="
 
+            echo "=== Cleaning up old Docker images ==="
+            docker system prune -af --volumes 2>/dev/null || true
+            docker image prune -af 2>/dev/null || true
+
+            echo "=== Pulling new image ==="
             # Pull new image
             docker pull $IMAGE
 
