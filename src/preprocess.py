@@ -684,7 +684,7 @@ def main():
 
     gifts_df = pd.read_csv(DATA_DIR / "gifts_valid_sim.csv", low_memory=False)
     sels_df  = pd.read_csv(DATA_DIR / "tab_sel_sim.csv",     low_memory=False)
-    scope_df = pd.read_excel(DATA_DIR / "PELICANO_FID_complete_sim.xlsx")
+    scope_df = pd.read_excel(DATA_DIR / "belfund_fid_scope_sim.xlsx")
 
     # Parse dates
     gifts_df["Pdate"]           = pd.to_datetime(gifts_df["Pdate"],           errors="coerce")

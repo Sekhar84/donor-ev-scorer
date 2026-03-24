@@ -221,7 +221,7 @@ The simulator generates 7 tables matching the exact column names and structure o
 | `gifts_valid_sim.csv` | Full gift history | ~151,000 |
 | `op_sim.csv` | Standing orders | ~48 |
 | `sdds_sim.csv` | SEPA direct debits | ~208 |
-| `PELICANO_FID_complete_sim.xlsx` | In-scope segment flags | 57 |
+| `belfund_fid_scope_sim.xlsx` | In-scope segment flags | 57 |
 
 ### Calibration — simulated vs real distributions
 
@@ -564,3 +564,16 @@ POST /score
 
 ---
 
+## Live deployment
+
+```
+API:       http://108.128.131.169:8080
+Health:    http://108.128.131.169:8080/health
+Docs:      http://108.128.131.169:8080/docs
+EC2:       i-03072499666b0afb8  (t3.small, eu-west-1)
+Elastic IP: 108.128.131.169  (permanent — survives stop/start)
+S3 bucket: s3://somasekhar-donor-ev-scorer
+```
+
+CI runs on every push — tests the full pipeline with 500 donors.
+CD runs on push to main — builds AMD64 image, deploys to EC2, health check via SSH.

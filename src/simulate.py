@@ -167,7 +167,7 @@ for i, (ag, cdate, sub, cost) in enumerate(zip(action_group_ids, camp_dates, sub
     ag_rows.append({
         "Client_Id":       CLIENT_ID,
         "Action_Group":    int(ag),
-        "Campaign":        f"PELICANO_FID_DM_{cdate.strftime('%Y%m')}_{i+1:02d}",
+        "Campaign":        f"BELFUND_FID_DM_{cdate.strftime('%Y%m')}_{i+1:02d}",
         "CampaignChannel": "Direct Mail",
         "CampaignType":    "FID",
         "CampaignSubType": sub,
@@ -458,7 +458,7 @@ print(f"\n[7] sdds_sim: {sdds_df_sim.shape}  ({n_sdd/N_DONORS:.2%} of pool)")
 print(f"    SddType: {pd.Series([r['SddType'] for r in sdd_rows]).value_counts().to_dict()}")
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 8. IN-SCOPE SEGMENT FLAGS (PELICANO_FID_complete.xlsx equivalent)
+# 8. IN-SCOPE SEGMENT FLAGS
 # ═══════════════════════════════════════════════════════════════════════════
 scope_rows = []
 for ai in all_action_ids:
@@ -477,8 +477,8 @@ for ai in all_action_ids:
     })
 
 scope_df_sim = pd.DataFrame(scope_rows)
-scope_df_sim.to_excel(OUT_DIR / "PELICANO_FID_complete_sim.xlsx", index=False)
-print(f"\n[8] PELICANO_FID_complete_sim.xlsx: {scope_df_sim.shape}")
+scope_df_sim.to_excel(OUT_DIR / "belfund_fid_scope_sim.xlsx", index=False)
+print(f"\n[8] belfund_fid_scope_sim.xlsx: {scope_df_sim.shape}")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 9. VALIDATION — check simulated stats match real
