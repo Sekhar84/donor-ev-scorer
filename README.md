@@ -574,7 +574,10 @@ Endpoint	Method	Description
 /model-info	GET	Model metadata
 /score	POST	Score donors
 /select	POST	Return selected donors
+
 Example Response
+
+```json
 {
   "ind_id": 100001,
   "prob_donate": 0.142,
@@ -584,6 +587,8 @@ Example Response
   "roi": 3.65,
   "selected": true
 }
+```
+
 ## 🐳 Deployment
 
 The system is fully containerised:
